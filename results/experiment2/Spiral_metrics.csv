@@ -1,0 +1,4 @@
+Algorithm,ARI,NMI,Silhouette,DBI
+DensityPeaks,1.0,1.0,0.0013,5.882
+Spectral,0.4553,0.4978,0.0349,10.3284
+K-means,-0.006,0.0004,0.3604,0.8858
