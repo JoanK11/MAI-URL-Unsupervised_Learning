@@ -1,0 +1,27 @@
+{
+    "iris": {
+        "covariance_type": "full",
+        "init_params": "kmeans",
+        "max_iter": 135
+    },
+    "wine": {
+        "covariance_type": "tied",
+        "init_params": "random",
+        "max_iter": 190
+    },
+    "digits": {
+        "covariance_type": "spherical",
+        "init_params": "random",
+        "max_iter": 96
+    },
+    "moons": {
+        "covariance_type": "diag",
+        "init_params": "kmeans",
+        "max_iter": 200
+    },
+    "blobs": {
+        "covariance_type": "spherical",
+        "init_params": "kmeans",
+        "max_iter": 140
+    }
+}

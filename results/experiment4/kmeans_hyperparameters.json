@@ -1,0 +1,22 @@
+{
+    "iris": {
+        "n_init": 12,
+        "init": "k-means++"
+    },
+    "wine": {
+        "n_init": 9,
+        "init": "random"
+    },
+    "digits": {
+        "n_init": 5,
+        "init": "random"
+    },
+    "moons": {
+        "n_init": 5,
+        "init": "k-means++"
+    },
+    "blobs": {
+        "n_init": 12,
+        "init": "k-means++"
+    }
+}

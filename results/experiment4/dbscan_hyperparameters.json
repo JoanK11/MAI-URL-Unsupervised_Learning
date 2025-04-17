@@ -1,0 +1,22 @@
+{
+    "iris": {
+        "eps": 1.0872422452394674,
+        "min_samples": 3
+    },
+    "wine": {
+        "eps": 1.9560398765972817,
+        "min_samples": 2
+    },
+    "digits": {
+        "eps": 1.9538760104164057,
+        "min_samples": 7
+    },
+    "moons": {
+        "eps": 0.20134784193810754,
+        "min_samples": 2
+    },
+    "blobs": {
+        "eps": 1.9538760104164057,
+        "min_samples": 7
+    }
+}

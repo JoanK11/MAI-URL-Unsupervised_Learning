@@ -1,0 +1,22 @@
+{
+    "iris": {
+        "percent": 4.058240230473894,
+        "density_estimator": "cutoff"
+    },
+    "wine": {
+        "percent": 2.5062473878411606,
+        "density_estimator": "cutoff"
+    },
+    "digits": {
+        "percent": 0.5,
+        "density_estimator": "gaussian"
+    },
+    "moons": {
+        "percent": 3.339050720918567,
+        "density_estimator": "cutoff"
+    },
+    "blobs": {
+        "percent": 4.084443440871048,
+        "density_estimator": "cutoff"
+    }
+}

@@ -1,0 +1,27 @@
+{
+    "iris": {
+        "gamma": 0.6173770394704576,
+        "assign_labels": "kmeans",
+        "affinity": "nearest_neighbors"
+    },
+    "wine": {
+        "gamma": 0.050679786970846574,
+        "assign_labels": "discretize",
+        "affinity": "rbf"
+    },
+    "digits": {
+        "gamma": 0.6173770394704576,
+        "assign_labels": "kmeans",
+        "affinity": "nearest_neighbors"
+    },
+    "moons": {
+        "gamma": 0.6173770394704576,
+        "assign_labels": "kmeans",
+        "affinity": "nearest_neighbors"
+    },
+    "blobs": {
+        "gamma": 2.4526126311336793,
+        "assign_labels": "kmeans",
+        "affinity": "rbf"
+    }
+}
