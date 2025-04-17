@@ -3,8 +3,7 @@ import matplotlib.pyplot as plt
 import os
 from DensityPeaksClustering import DensityPeaksClustering
 from ClusteringAggregation import ClusteringAggregation
-#from DPCV import DPCV
-from DPCVnew import DPCV
+from DPCV import DPCV
 from FLAME import FLAME
 from sklearn.cluster import KMeans, SpectralClustering
 from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score, silhouette_score, davies_bouldin_score

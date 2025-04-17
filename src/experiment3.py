@@ -43,7 +43,10 @@ def create_montage(images, labels, centers, cluster_colors, output_path):
                 # mark cluster centers with a white circle at top-right
                 if idx in centers:
                     ax.scatter(0.9, 0.9, s=80, c='white', marker='o', transform=ax.transAxes, edgecolors='none')
-    plt.subplots_adjust(wspace=0, hspace=0)
+                # Remove subplot borders
+                for spine in ax.spines.values():
+                    spine.set_visible(False)
+    plt.subplots_adjust(wspace=0, hspace=0, left=0, right=1, bottom=0, top=1)
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     fig.savefig(output_path, dpi=300, bbox_inches='tight')
     plt.close(fig)

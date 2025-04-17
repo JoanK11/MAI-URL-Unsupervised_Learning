@@ -25,52 +25,63 @@ def save_hyperparameters(dataset_name, hyperparameters, results_dir):
 
 
 def optimize_dpc_olivetti(images, targets, n_clusters, results_dir):
-    """Bayesian optimize DPC cw_levels and cw_K to maximize ARI."""
+    """Bayesian optimize DPC parameters to maximize ARI."""
     # prepare cluster colors for visualizations
     cmap = plt.cm.get_cmap('tab10', n_clusters)
     cluster_colors = [cmap(i) for i in range(n_clusters)]
-    # search space: optimize cw_levels and cw_K
+    
+    # search space: optimize dc, cw_levels, cw_K, cw_guardb
     space = [
+        Real(0.01, 0.2, prior='log-uniform', name='dc'),
         Integer(1, 6, name='cw_levels'),
-        Real(1e-10, 1e-6, prior='log-uniform', name='cw_K')
+        Real(1e-10, 1e-6, prior='log-uniform', name='cw_K'),
+        Integer(0, 3, name='cw_guardb')
     ]
+    
     def objective(params):
-        cw_levels, cw_K = params
+        dc, cw_levels, cw_K, cw_guardb = params
         # instantiate model with given parameters
         model = DensityPeaksClustering(
             n_clusters=n_clusters,
-            dc=0.07,
+            dc=dc,
             density_estimator='gaussian',
             similarity_metric='cw-ssim',
-            cw_levels=cw_levels,
-            cw_K=cw_K
+            cwssim_level=cw_levels,
+            cwssim_K=cw_K,
+            cwssim_guardb=cw_guardb
         )
         # fit model and obtain labels
         model.fit(images)
         labels = model.labels_
         # save visual results for this configuration
-        dg_path = os.path.join(results_dir, f"Olivetti_decision_graph_levels{cw_levels}_K{cw_K:.0e}.png")
+        dg_path = os.path.join(results_dir, f"Olivetti_decision_graph_dc{dc:.3f}_levels{cw_levels}_K{cw_K:.0e}_guardb{cw_guardb}.png")
         plot_decision_graph(model.rho_, model.delta_, model.centers_, cluster_colors, dg_path)
-        montage_path = os.path.join(results_dir, f"Olivetti_montage_levels{cw_levels}_K{cw_K:.0e}.png")
+        montage_path = os.path.join(results_dir, f"Olivetti_montage_dc{dc:.3f}_levels{cw_levels}_K{cw_K:.0e}_guardb{cw_guardb}.png")
         create_montage(images, labels, list(model.centers_), cluster_colors, montage_path)
         # maximize ARI -> minimize negative ARI
         return -adjusted_rand_score(targets, labels)
 
-    res = gp_minimize(objective, space, n_calls=20, random_state=42)
+    res = gp_minimize(objective, space, n_calls=30, random_state=42)
     # retrieve best parameters
-    best_levels, best_K = res.x
+    best_dc, best_levels, best_K, best_guardb = res.x
     # build best model with optimized parameters
     best_model = DensityPeaksClustering(
         n_clusters=n_clusters,
-        dc=0.07,
+        dc=best_dc,
         density_estimator='gaussian',
         similarity_metric='cw-ssim',
-        cw_levels=best_levels,
-        cw_K=best_K
+        cwssim_level=best_levels,
+        cwssim_K=best_K,
+        cwssim_guardb=best_guardb
     )
     best_model.fit(images)
     # save optimized hyperparameters
-    save_hyperparameters('olivetti', {'cw_levels': best_levels, 'cw_K': best_K}, results_dir)
+    save_hyperparameters('olivetti', {
+        'dc': best_dc,
+        'cw_levels': best_levels,
+        'cw_K': best_K,
+        'cw_guardb': best_guardb
+    }, results_dir)
     print(f"Saved optimized hyperparameters to {results_dir}")
     return best_model
 

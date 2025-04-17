@@ -4,6 +4,7 @@ from sklearn.metrics import pairwise_distances
 
 import dtcwt
 from skimage.metrics import structural_similarity
+from scipy.signal import convolve2d
 
 class DensityPeaksClustering(BaseEstimator, ClusterMixin):
     """
@@ -25,10 +26,21 @@ class DensityPeaksClustering(BaseEstimator, ClusterMixin):
 
     similarity_metric : str, default='euclidean'
         Metric to compute pairwise distances: 'euclidean', 'cw-ssim', or 'ssim'.
-    cw_levels: int, default=4
-        Number of levels for the dual-tree complex wavelet transform.
-    cw_K: float, default=1e-8
-        Small constant to stabilize the CW-SSIM computation.
+
+    cwssim_level: int, default=6
+        Number of DTCWT levels.
+
+    cwssim_guardb: int, default=0
+        Guard-band to discard at each side.
+        
+    cwssim_K: float, default=0.0
+        Small constant in CW-SSIM formula.
+
+    ssim_win_size: tuple, default=None
+        Window size for SSIM computation.
+
+    ssim_gaussian_weights: bool, default=False
+        Whether to use Gaussian weights in SSIM computation.
     """
     def __init__(
         self,
@@ -37,16 +49,29 @@ class DensityPeaksClustering(BaseEstimator, ClusterMixin):
         n_clusters=None,
         density_estimator='cutoff',
         similarity_metric='euclidean',
-        cw_levels=4,
-        cw_K=1e-8
+        cwssim_level=6,
+        cwssim_guardb=0,
+        cwssim_K=0.0,
+        ssim_win_size=None,
+        ssim_gaussian_weights=False
     ):
         self.dc = dc
         self.percent = percent
         self.n_clusters = n_clusters
         self.density_estimator = density_estimator
         self.similarity_metric = similarity_metric
-        self.cw_levels = cw_levels
-        self.cw_K = cw_K
+        self.cwssim_level = cwssim_level
+        self.cwssim_guardb = cwssim_guardb
+        self.cwssim_K = cwssim_K
+        self.ssim_win_size = ssim_win_size
+        self.ssim_gaussian_weights = ssim_gaussian_weights
+        
+        # DT‑CWT transformer
+        self._dtcwt = dtcwt.Transform2d()
+
+        # precompute the uniform 7×7 window once
+        self._cw_window = np.ones((7, 7), dtype=np.float32)
+        self._cw_window /= self._cw_window.sum()
 
     def fit(self, X, y=None):
         if self.similarity_metric == 'cw-ssim':
@@ -77,6 +102,7 @@ class DensityPeaksClustering(BaseEstimator, ClusterMixin):
         # Identify cluster centers
         self.centers_ = self._find_centers(self.rho_, self.delta_)
         self.n_clusters_ = len(self.centers_)
+        
         if self.similarity_metric in ('cw-ssim', 'ssim'):
             self.center_coords_ = X[self.centers_]
         else:
@@ -108,23 +134,33 @@ class DensityPeaksClustering(BaseEstimator, ClusterMixin):
             raise RuntimeError("The model has not been fitted yet. Call 'fit' before 'predict'.")
 
         if self.similarity_metric == 'cw-ssim':
-            if X.ndim != 3:
-                raise ValueError("X must be a 3D array of shape (n_samples, height, width) for cw-ssim metric.")
-            n, k = X.shape[0], len(self.center_coords_)
-            distances_to_centers = np.zeros((n, k))
-            for i in range(n):
-                for j in range(k):
-                    sim = self._compute_cwssim(X[i], self.center_coords_[j])
+            # Support input as 2D feature vectors or 3D images
+            imgs = self._prepare_images(X)
+            center_imgs = self._prepare_images(self.center_coords_)
+            n, k = len(imgs), len(center_imgs)
+            distances_to_centers = np.zeros((n, k), dtype=float)
+            for i, img in enumerate(imgs):
+                for j, cimg in enumerate(center_imgs):
+                    sim = self._cwssim_index(img, cimg)
                     distances_to_centers[i, j] = 1.0 - sim
+
         elif self.similarity_metric == 'ssim':
             if X.ndim != 3:
                 raise ValueError("X must be a 3D array of shape (n_samples, height, width) for ssim metric.")
             n, k = X.shape[0], len(self.center_coords_)
             distances_to_centers = np.zeros((n, k))
+            # Prepare SSIM keyword arguments
+            sim_kwargs = {}
+            if self.ssim_win_size is not None:
+                sim_kwargs['win_size'] = self.ssim_win_size
+            if self.ssim_gaussian_weights:
+                sim_kwargs['gaussian_weights'] = True
             for i in range(n):
                 for j in range(k):
-                    sim = structural_similarity(X[i], self.center_coords_[j], data_range=self.data_range_)
+                    sim = structural_similarity(
+                        X[i], self.center_coords_[j], data_range=self.data_range_, **sim_kwargs)
                     distances_to_centers[i, j] = 1.0 - sim
+
         else:
             distances_to_centers = pairwise_distances(X, self.center_coords_, metric=self.similarity_metric)
 
@@ -268,52 +304,108 @@ class DensityPeaksClustering(BaseEstimator, ClusterMixin):
         
         return halo
     
+    def _prepare_images(self, X):
+        """
+        Ensure we have a list of 2D arrays.
+        Supports X of shape (N, H, W) or (N, H*W).
+        """
+        if X.ndim == 3:
+            return [x.astype(np.float32) for x in X]
+        elif X.ndim == 2:
+            N, feat = X.shape
+            side = int(np.sqrt(feat))
+            if side * side != feat:
+                raise ValueError("Can't reshape feature vectors into square images")
+            return [X[i].reshape(side, side).astype(np.float32) for i in range(N)]
+        else:
+            raise ValueError("X must be 2D or 3D array")
+
     def _compute_ssim_distance_matrix(self, X):
         """
         Compute pairwise 1 - SSIM distances for image dataset X using skimage.metrics.structural_similarity.
         """
         n = X.shape[0]
         dmat = np.zeros((n, n))
-        drange = X.max() - X.min()
+        # Prepare SSIM keyword arguments based on parameters
+        sim_kwargs = {}
+        if self.ssim_win_size is not None:
+            sim_kwargs['win_size'] = self.ssim_win_size
+        if self.ssim_gaussian_weights:
+            sim_kwargs['gaussian_weights'] = True
         for i in range(n):
             for j in range(i+1, n):
-                sim = structural_similarity(X[i], X[j], data_range=drange)
+                sim = structural_similarity(
+                    X[i], X[j], data_range=self.data_range_, **sim_kwargs)
                 d = 1.0 - sim
                 dmat[i, j] = dmat[j, i] = d
         return dmat
     
     def _compute_cwssim_distance_matrix(self, X):
-        """
-        Compute pairwise 1 - CW-SSIM distances for image dataset X.
-        """
-        n = X.shape[0]
-        dmat = np.zeros((n, n))
-        for i in range(n):
-            for j in range(i+1, n):
-                sim = self._compute_cwssim(X[i], X[j])
+        imgs = self._prepare_images(X)
+        N = len(imgs)
+        D = np.zeros((N, N), dtype=float)
+        for i in range(N):
+            for j in range(i, N):
+                sim = self._cwssim_index(imgs[i], imgs[j])
                 d = 1.0 - sim
-                dmat[i, j] = dmat[j, i] = d
-        return dmat
+                D[i, j] = D[j, i] = d
+        return D
 
-    def _compute_cwssim(self, img1, img2):
+    def _cwssim_index(self, img1, img2):
         """
-        Compute the CW-SSIM index between two images via DT-CWT.
+        Compute CW-SSIM exactly over ALL high-pass subbands and all orientations,
+        skipping any subband too small for the 7×7 window.
         """
-        # forward transform
-        transformer = dtcwt.Transform2d()  # reuse transform object if desired
-        c1 = transformer.forward(img1, nlevels=self.cw_levels)
-        c2 = transformer.forward(img2, nlevels=self.cw_levels)
-        svals = []
-        # iterate over highpass subbands (levels)
-        for sb1, sb2 in zip(c1.highpasses, c2.highpasses):
-            # sb: (h, w, n_orient)
-            # flatten spatial dims
-            h, w, o = sb1.shape
-            v1 = sb1.reshape(-1, o)
-            v2 = sb2.reshape(-1, o)
-            # compute local CW-SSIM as global approx per subband
-            num = np.abs(np.sum(v1 * np.conj(v2), axis=1))
-            den = np.sqrt(np.sum(np.abs(v1)**2, axis=1) * np.sum(np.abs(v2)**2, axis=1))
-            sband = (num + self.cw_K) / (den + self.cw_K)
-            svals.append(np.mean(sband))
-        return float(np.mean(svals))
+        coeffs1 = self._dtcwt.forward(img1, nlevels=self.cwssim_level)
+        coeffs2 = self._dtcwt.forward(img2, nlevels=self.cwssim_level)
+
+        all_cssim = []
+
+        # loop over each scale (high-pass subband)
+        for lvl, (b1, b2) in enumerate(zip(coeffs1.highpasses, coeffs2.highpasses)):
+            # 1) optional guard-band crop
+            gb = int(self.cwssim_guardb / (2 ** lvl))
+            if gb > 0:
+                b1 = b1[gb:-gb, gb:-gb, :]
+                b2 = b2[gb:-gb, gb:-gb, :]
+
+            h, w, ori = b1.shape
+
+            # skip if too small for 7×7 valid convolution
+            if h < 7 or w < 7:
+                continue
+
+            # 2) precompute the Gaussian pooling weights for this subband
+            h_loc = h - 7 + 1
+            w_loc = w - 7 + 1
+            y = np.arange(h_loc)
+            x = np.arange(w_loc)
+            Y, X = np.meshgrid(y, x, indexing='ij')
+            cy, cx = (h_loc - 1) / 2.0, (w_loc - 1) / 2.0
+            sigma = h / 4.0
+            weight = np.exp(-(((Y - cy) ** 2 + (X - cx) ** 2) / (2 * sigma ** 2)))
+            weight /= weight.sum()
+
+            # 3) for each orientation
+            for o in range(ori):
+                c1 = b1[:, :, o]
+                c2 = b2[:, :, o]
+
+                corr = c1 * np.conj(c2)
+                varr = np.abs(c1)**2 + np.abs(c2)**2
+
+                # local sums via "valid" convolution
+                corr_loc = convolve2d(corr, self._cw_window, mode='valid')
+                varr_loc = convolve2d(varr, self._cw_window, mode='valid')
+
+                # CW-SSIM map
+                cssim_map = (2 * np.abs(corr_loc) + self.cwssim_K) / (varr_loc + self.cwssim_K)
+
+                # weighted pooling
+                all_cssim.append(np.sum(cssim_map * weight))
+
+        if not all_cssim:
+            # no valid region at any scale → define similarity 0
+            return 0.0
+
+        return float(np.mean(all_cssim))
