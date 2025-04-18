@@ -2,10 +2,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.pipeline import Pipeline
-from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
-from sklearn.feature_selection import VarianceThreshold
 import json
 
 # Clustering algorithms
@@ -26,49 +24,7 @@ from skopt.space import Real, Integer, Categorical
 
 # For visualization and saving results
 import os
-import matplotlib.pyplot as plt
-from matplotlib import cm
-import seaborn as sns
 from sklearn.manifold import TSNE
-
-def load_and_preprocess(
-    filepath: str,
-    target_col: str = None,
-    do_pca: bool = False,
-    pca_variance: float = 0.95,
-    pca_components: int = None
-):
-    # 1. Load
-    df = pd.read_csv(filepath)
-
-    # 2. Split out y if present
-    if target_col is not None and target_col in df.columns:
-        y = df[target_col].values
-        X_df = df.drop(columns=[target_col])
-    else:
-        y = None
-        X_df = df
-
-    # 3. Build pipeline steps
-    steps = [
-        ("imputer", SimpleImputer(strategy="median")),
-        ("variance_thresh", VarianceThreshold(threshold=0.0)),
-        ("scaler", StandardScaler()),
-    ]
-
-    if do_pca:
-        if pca_components is not None:
-            pca = PCA(n_components=pca_components)
-        else:
-            pca = PCA(n_components=pca_variance)
-        steps.append(("pca", pca))
-
-    pipe = Pipeline(steps)
-
-    # 4. Fit & transform
-    X = pipe.fit_transform(X_df)
-
-    return X, y
 
 def plot_decision_graph(rho, delta, center_indices, cluster_colors, output_path=None, ax=None, title=None):
     """
@@ -162,7 +118,6 @@ def load_dataset(dataset_name, random_state=42):
     return X, y, n_clusters
 
 def save_hyperparameters(dataset_name, model_name, hyperparameters):
-    """Save hyperparameters to a JSON file. One file per model containing all datasets."""
     # Convert numpy types to Python native types
     def convert_to_native(obj):
         if isinstance(obj, (np.int_, np.intc, np.intp, np.int8, np.int16, np.int32, 
@@ -198,7 +153,6 @@ def save_hyperparameters(dataset_name, model_name, hyperparameters):
     return filepath
 
 def load_hyperparameters(dataset_name, model_name):
-    """Load hyperparameters from a JSON file if it exists."""
     filepath = f"../results/experiment4/{model_name}_hyperparameters.json"
     try:
         with open(filepath, 'r') as f:
@@ -485,9 +439,6 @@ def visualize_clusters(X, y_true, y_dpc, y_kmeans, y_dbscan, y_spectral, y_gmm, 
     n_clusters = len(unique_labels)
     colors = plt.cm.viridis(np.linspace(0, 1, n_clusters))
     
-    # Create label to color mapping
-    label_to_color = dict(zip(unique_labels, colors))
-    
     # If dimensions > 2, use TSNE to reduce to 2D for visualization
     if X.shape[1] > 2:
         tsne = TSNE(n_components=2, random_state=random_state)
@@ -504,34 +455,34 @@ def visualize_clusters(X, y_true, y_dpc, y_kmeans, y_dbscan, y_spectral, y_gmm, 
     scatter = ax.scatter(X_2d[:, 0], X_2d[:, 1], c=y_true, cmap='viridis', s=30, alpha=0.8)
     ax.set_title('Ground Truth')
     
-    # DensityPeaksClustering
+    # DPC
     ax = axes[0, 1]
     scatter = ax.scatter(X_2d[:, 0], X_2d[:, 1], c=y_dpc, cmap='viridis', s=30, alpha=0.8)
-    ax.set_title('DensityPeaksClustering')
+    ax.set_title('DPC')
     
     # Store colors for decision graph - sort labels to ensure consistency
     dpc_unique_labels = np.sort(np.unique(y_dpc))
     dpc_colors = [colors[np.where(unique_labels == label)[0][0]] for label in dpc_unique_labels if label != -1]
     
-    # KMeans
+    # K-means
     ax = axes[0, 2]
     scatter = ax.scatter(X_2d[:, 0], X_2d[:, 1], c=y_kmeans, cmap='viridis', s=30, alpha=0.8)
-    ax.set_title('KMeans')
+    ax.set_title('K-means')
     
     # DBSCAN
     ax = axes[1, 0]
     scatter = ax.scatter(X_2d[:, 0], X_2d[:, 1], c=y_dbscan, cmap='viridis', s=30, alpha=0.8)
     ax.set_title('DBSCAN')
     
-    # SpectralClustering
+    # Spectral Clustering
     ax = axes[1, 1]
     scatter = ax.scatter(X_2d[:, 0], X_2d[:, 1], c=y_spectral, cmap='viridis', s=30, alpha=0.8)
-    ax.set_title('SpectralClustering')
+    ax.set_title('Spectral Clustering')
     
-    # GaussianMixture
+    # GMM
     ax = axes[1, 2]
     scatter = ax.scatter(X_2d[:, 0], X_2d[:, 1], c=y_gmm, cmap='viridis', s=30, alpha=0.8)
-    ax.set_title('GaussianMixture')
+    ax.set_title('GMM')
     
     # Adjust layout and save
     plt.tight_layout(rect=[0, 0, 1, 0.95])
@@ -543,7 +494,7 @@ def visualize_clusters(X, y_true, y_dpc, y_kmeans, y_dbscan, y_spectral, y_gmm, 
 
 def visualize_decision_graphs(all_dpc_models, dataset_names, all_colors):
     fig, axes = plt.subplots(3, 3, figsize=(15, 15))
-    fig.suptitle('Decision Graphs for DensityPeaksClustering', fontsize=16)
+    fig.suptitle('Decision Graphs for DPC', fontsize=16)
     
     axes = axes.flatten()
     
@@ -551,7 +502,6 @@ def visualize_decision_graphs(all_dpc_models, dataset_names, all_colors):
     for i, (dpc, dataset_name, colors) in enumerate(zip(all_dpc_models, dataset_names, all_colors)):
         center_indices = dpc.centers_
         
-        # Plot the decision graph with matching colors
         plot_decision_graph(
             dpc.rho_,
             dpc.delta_,
@@ -573,42 +523,9 @@ def visualize_decision_graphs(all_dpc_models, dataset_names, all_colors):
     
     print(f"Decision graphs saved to {save_path}")
 
-def save_model_metrics(dataset_name, model_name, metrics):
-    """Save metrics for a model in a CSV file with datasets as rows and metrics as columns."""
-    filepath = f"../results/experiment4/{model_name}_metrics.csv"
-    
-    # Create metrics dictionary for this dataset
-    dataset_metrics = {
-        'Dataset': dataset_name,
-        'ARI': metrics['ARI'],
-        'NMI': metrics['NMI'],
-        'Silhouette': metrics['Silhouette'],
-        'DBI': metrics['DBI']
-    }
-    
-    try:
-        # Try to load existing metrics
-        df = pd.read_csv(filepath)
-        # Update or append metrics for this dataset
-        if dataset_name in df['Dataset'].values:
-            # Update row where Dataset matches
-            for col in df.columns:
-                df.loc[df['Dataset'] == dataset_name, col] = dataset_metrics[col]
-        else:
-            df = pd.concat([df, pd.DataFrame([dataset_metrics])], ignore_index=True)
-    except FileNotFoundError:
-        # Create new DataFrame if file doesn't exist
-        df = pd.DataFrame([dataset_metrics])
-    
-    # Save to CSV
-    df.to_csv(filepath, index=False)
-    return filepath
-
 def main(random_state=42):
-    # Datasets to analyze
     datasets = ['iris', 'wine', 'digits', 'moons', 'blobs']
     
-    # Store all DPC models and colors for decision graph visualization
     all_dpc_models = []
     all_colors = []
     
@@ -623,7 +540,6 @@ def main(random_state=42):
         dpc = optimize_dpc(X, y_true, n_clusters, dataset_name, random_state=random_state)
         y_dpc = dpc.fit_predict(X)
         
-        # Store the DPC model for later visualization of decision graphs
         all_dpc_models.append(dpc)
         
         print("  Optimizing KMeans...")
@@ -649,12 +565,18 @@ def main(random_state=42):
         metrics_spectral = calculate_metrics(X, y_true, y_spectral)
         metrics_gmm = calculate_metrics(X, y_true, y_gmm)
         
-        # Save metrics for each model
-        save_model_metrics(dataset_name, "dpc", metrics_dpc)
-        save_model_metrics(dataset_name, "kmeans", metrics_kmeans)
-        save_model_metrics(dataset_name, "dbscan", metrics_dbscan)
-        save_model_metrics(dataset_name, "spectral", metrics_spectral)
-        save_model_metrics(dataset_name, "gmm", metrics_gmm)
+        # Save all model metrics
+        df_metrics = pd.DataFrame([
+            metrics_dpc,
+            metrics_kmeans,
+            metrics_dbscan,
+            metrics_spectral,
+            metrics_gmm
+        ], index=['DPC', 'K-means', 'DBSCAN', 'Spectral Clustering', 'GMM'])
+
+        df_metrics = df_metrics[['ARI', 'NMI', 'Silhouette', 'DBI']].round(2)
+        output_path = f"../results/experiment4/{dataset_name}_metrics.csv"
+        df_metrics.to_csv(output_path, index_label='Model')
         
         # Create and save visualization, get colors for decision graph
         dpc_colors = visualize_clusters(X, y_true, y_dpc, y_kmeans, y_dbscan, y_spectral, y_gmm, dataset_name, random_state=random_state)
@@ -664,7 +586,6 @@ def main(random_state=42):
         print(f"  Visualization saved to: ../results/experiment4/{dataset_name}.png")
         print()
     
-    # Create and save decision graphs visualization with matching colors
     visualize_decision_graphs(all_dpc_models, datasets, all_colors)
 
 if __name__ == "__main__":

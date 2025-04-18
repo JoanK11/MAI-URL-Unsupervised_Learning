@@ -35,7 +35,7 @@ class ClusteringAggregation:
             Cluster labels for each data point
         """
         # Compute clusters with 5 different techniques
-        n_clusters = self.n_clusters or 7  # Default to 7 if not specified
+        n_clusters = self.n_clusters or 7
         
         # 1. Single linkage
         single_linkage = AgglomerativeClustering(n_clusters=n_clusters, linkage='single')

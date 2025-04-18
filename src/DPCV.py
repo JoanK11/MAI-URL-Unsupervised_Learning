@@ -1,6 +1,6 @@
 import numpy as np
 from sklearn.base import BaseEstimator, ClusterMixin
-from sklearn.metrics import pairwise_distances
+from scipy.spatial.distance import cdist
 
 class DPCV(BaseEstimator, ClusterMixin):
     """
@@ -37,8 +37,8 @@ class DPCV(BaseEstimator, ClusterMixin):
             Returns self
         """
         # Step 1: Calculate Euclidean distance between points
-        self.distance_matrix_ = pairwise_distances(X)
-        n_samples, n_features = X.shape # Get number of features
+        self.distance_matrix_ = cdist(X, X)
+        n_samples, n_features = X.shape
         
         # Step 2: Calculate variance matrix using formula (8)
         self.variance_matrix_ = np.zeros((n_samples, n_samples))

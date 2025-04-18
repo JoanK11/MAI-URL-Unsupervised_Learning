@@ -1,6 +1,6 @@
 import numpy as np
 from sklearn.base import BaseEstimator, ClusterMixin
-from sklearn.metrics import pairwise_distances
+from scipy.spatial.distance import cdist
 
 import dtcwt
 from skimage.metrics import structural_similarity
@@ -53,7 +53,8 @@ class DensityPeaksClustering(BaseEstimator, ClusterMixin):
         cwssim_guardb=0,
         cwssim_K=0.0,
         ssim_win_size=None,
-        ssim_gaussian_weights=False
+        ssim_gaussian_weights=False,
+        restrictive=False
     ):
         self.dc = dc
         self.percent = percent
@@ -65,6 +66,7 @@ class DensityPeaksClustering(BaseEstimator, ClusterMixin):
         self.cwssim_K = cwssim_K
         self.ssim_win_size = ssim_win_size
         self.ssim_gaussian_weights = ssim_gaussian_weights
+        self.restrictive = restrictive
         
         # DT‑CWT transformer
         self._dtcwt = dtcwt.Transform2d()
@@ -87,7 +89,7 @@ class DensityPeaksClustering(BaseEstimator, ClusterMixin):
             distances = self._compute_ssim_distance_matrix(X)
         else:
             self.X_ = X
-            distances = pairwise_distances(X, metric=self.similarity_metric)
+            distances = cdist(X, X, metric=self.similarity_metric)
         N = distances.shape[0]
 
         # Estimate dc if not provided
@@ -162,7 +164,7 @@ class DensityPeaksClustering(BaseEstimator, ClusterMixin):
                     distances_to_centers[i, j] = 1.0 - sim
 
         else:
-            distances_to_centers = pairwise_distances(X, self.center_coords_, metric=self.similarity_metric)
+            distances_to_centers = cdist(X, self.center_coords_, metric=self.similarity_metric)
 
         nearest = np.argmin(distances_to_centers, axis=1)
         return self.labels_[self.centers_][nearest]
@@ -266,7 +268,11 @@ class DensityPeaksClustering(BaseEstimator, ClusterMixin):
             nearest = higher_density_indices[np.argmin(distances[idx, higher_density_indices])]
             nneigh[idx] = nearest
             if labels[idx] == -1:
-                labels[idx] = labels[nearest]
+                if self.similarity_metric in ('cw-ssim', 'ssim') and self.restrictive:
+                    if distances[idx, nearest] < self.dc_:
+                        labels[idx] = labels[nearest]
+                else:
+                    labels[idx] = labels[nearest]
 
         return labels
     
@@ -354,7 +360,7 @@ class DensityPeaksClustering(BaseEstimator, ClusterMixin):
     def _cwssim_index(self, img1, img2):
         """
         Compute CW-SSIM exactly over ALL high-pass subbands and all orientations,
-        skipping any subband too small for the 7×7 window.
+        skipping any subband too small for the 7x7 window.
         """
         coeffs1 = self._dtcwt.forward(img1, nlevels=self.cwssim_level)
         coeffs2 = self._dtcwt.forward(img2, nlevels=self.cwssim_level)
@@ -405,7 +411,6 @@ class DensityPeaksClustering(BaseEstimator, ClusterMixin):
                 all_cssim.append(np.sum(cssim_map * weight))
 
         if not all_cssim:
-            # no valid region at any scale → define similarity 0
             return 0.0
 
         return float(np.mean(all_cssim))

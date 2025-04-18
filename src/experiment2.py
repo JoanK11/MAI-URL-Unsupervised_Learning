@@ -11,22 +11,6 @@ import pandas as pd
 from scipy.stats import mode
 
 def plot_decision_graph(rho, delta, center_indices, cluster_colors, output_path):
-    """
-    Plot the decision graph (rho-delta plot) with cluster centers highlighted.
-    
-    Parameters:
-    -----------
-    rho : array-like
-        Local density values
-    delta : array-like
-        Minimum distance to points of higher density
-    center_indices : array-like
-        Indices of cluster centers
-    cluster_colors : list
-        List of colors for each cluster center
-    output_path : str
-        Path where to save the plot
-    """
     plt.figure(figsize=(5, 4))
     
     # Plot all points
@@ -43,8 +27,6 @@ def plot_decision_graph(rho, delta, center_indices, cluster_colors, output_path)
     plt.close()
 
 def run_aggregation():
-    """Run DensityPeaksClustering and Clustering Aggregation on the Aggregation dataset."""
-    # Read data from Aggregation.txt
     data_file = "../data/experiment2/Aggregation.txt"
     data = np.loadtxt(data_file, delimiter='\t')
     
@@ -91,7 +73,7 @@ def run_aggregation():
     
     # Create DataFrame and save to CSV
     metrics_df = pd.DataFrame(metrics)
-    metrics_df = metrics_df.round(4)  # Round to 4 decimal places
+    metrics_df = metrics_df.round(4)
     results_dir = "../results/experiment2"
     os.makedirs(results_dir, exist_ok=True)
     metrics_df.to_csv(f"{results_dir}/Aggregation_metrics.csv", index=False)
@@ -133,7 +115,7 @@ def run_aggregation():
     
     # Plot results
     fig = plt.figure(figsize=(12, 10))
-    plt.subplots_adjust(bottom=0.1)  # Add more space at the bottom for captions
+    plt.subplots_adjust(bottom=0.1)
     
     # Original labels
     ax1 = plt.subplot(2, 2, 1)
@@ -143,12 +125,10 @@ def run_aggregation():
         plt.scatter(X[mask, 0], X[mask, 1], c=color_hex[color_name], s=30, alpha=0.8)
     plt.title("Original Labels")
     plt.axis('off')
-    # Add border
     for spine in ax1.spines.values():
         spine.set_visible(True)
         spine.set_linewidth(2)
         spine.set_edgecolor('black')
-    # Add caption
     plt.text(0.5, -0.1, '(a)', transform=ax1.transAxes, fontsize=12, ha='center')
     
     # DensityPeaksClustering labels
@@ -159,12 +139,10 @@ def run_aggregation():
         plt.scatter(X[mask, 0], X[mask, 1], c=color_hex[color_name], s=30, alpha=0.8)
     plt.title("DensityPeaksClustering Prediction")
     plt.axis('off')
-    # Add border
     for spine in ax2.spines.values():
         spine.set_visible(True)
         spine.set_linewidth(2)
         spine.set_edgecolor('black')
-    # Add caption
     plt.text(0.5, -0.1, '(b)', transform=ax2.transAxes, fontsize=12, ha='center')
     
     # Clustering Aggregation labels
@@ -175,12 +153,10 @@ def run_aggregation():
         plt.scatter(X[mask, 0], X[mask, 1], c=color_hex[color_name], s=30, alpha=0.8)
     plt.title("Clustering Aggregation Prediction")
     plt.axis('off')
-    # Add border
     for spine in ax3.spines.values():
         spine.set_visible(True)
         spine.set_linewidth(2)
         spine.set_edgecolor('black')
-    # Add caption
     plt.text(0.5, -0.1, '(c)', transform=ax3.transAxes, fontsize=12, ha='center')
     
     # K-means clustering labels
@@ -191,16 +167,13 @@ def run_aggregation():
         plt.scatter(X[mask, 0], X[mask, 1], c=color_hex[color_name], s=30, alpha=0.8)
     plt.title("K-means Clustering")
     plt.axis('off')
-    # Add border
     for spine in ax4.spines.values():
         spine.set_visible(True)
         spine.set_linewidth(2)
         spine.set_edgecolor('black')
-    # Add caption
     plt.text(0.5, -0.1, '(d)', transform=ax4.transAxes, fontsize=12, ha='center')
     
     plt.tight_layout()
-    # Adjust the layout to make room for captions
     plt.subplots_adjust(hspace=0.3)
     
     # Save the plot
@@ -209,8 +182,6 @@ def run_aggregation():
     plt.close()
 
 def run_flame():
-    """Run DensityPeaksClustering and FLAME on the Flame dataset."""
-    # Read data from flame.txt
     data_file = "../data/experiment2/flame.txt"
     data = np.loadtxt(data_file, delimiter='\t')
     
@@ -258,7 +229,7 @@ def run_flame():
     
     # Create DataFrame and save to CSV
     metrics_df = pd.DataFrame(metrics)
-    metrics_df = metrics_df.round(4)  # Round to 4 decimal places
+    metrics_df = metrics_df.round(4)
     results_dir = "../results/experiment2"
     os.makedirs(results_dir, exist_ok=True)
     metrics_df.to_csv(f"{results_dir}/Flame_metrics.csv", index=False)
@@ -271,7 +242,7 @@ def run_flame():
     }
     
     # Plot decision graph for DensityPeaksClustering
-    dpc_colors = ['red', 'blue']  # Colors for the two clusters
+    dpc_colors = ['red', 'blue']
     dpc_hex_colors = [color_hex[color] for color in dpc_colors]
     plot_decision_graph(
         dpc.rho_,
@@ -283,7 +254,7 @@ def run_flame():
     
     # Plot results
     fig = plt.figure(figsize=(12, 10))
-    plt.subplots_adjust(bottom=0.1)  # Add more space at the bottom for captions
+    plt.subplots_adjust(bottom=0.1)
     
     # Original labels
     ax1 = plt.subplot(2, 2, 1)
@@ -293,12 +264,10 @@ def run_flame():
         plt.scatter(X[mask, 0], X[mask, 1], c=color_hex[color_name], s=30, alpha=0.8)
     plt.title("Original Labels")
     plt.axis('off')
-    # Add border
     for spine in ax1.spines.values():
         spine.set_visible(True)
         spine.set_linewidth(2)
         spine.set_edgecolor('black')
-    # Add caption
     plt.text(0.5, -0.1, '(a)', transform=ax1.transAxes, fontsize=12, ha='center')
     
     # DPC labels
@@ -309,12 +278,10 @@ def run_flame():
         plt.scatter(X[mask, 0], X[mask, 1], c=color_hex[color_name], s=30, alpha=0.8)
     plt.title("DensityPeaksClustering Prediction")
     plt.axis('off')
-    # Add border
     for spine in ax2.spines.values():
         spine.set_visible(True)
         spine.set_linewidth(2)
         spine.set_edgecolor('black')
-    # Add caption
     plt.text(0.5, -0.1, '(b)', transform=ax2.transAxes, fontsize=12, ha='center')
     
     # FLAME labels
@@ -329,12 +296,10 @@ def run_flame():
     
     plt.title("FLAME Clustering Prediction")
     plt.axis('off')
-    # Add border
     for spine in ax3.spines.values():
         spine.set_visible(True)
         spine.set_linewidth(2)
         spine.set_edgecolor('black')
-    # Add caption
     plt.text(0.5, -0.1, '(c)', transform=ax3.transAxes, fontsize=12, ha='center')
     
     # K-means labels
@@ -345,16 +310,13 @@ def run_flame():
         plt.scatter(X[mask, 0], X[mask, 1], c=color_hex[color_name], s=30, alpha=0.8)
     plt.title("K-means Clustering")
     plt.axis('off')
-    # Add border
     for spine in ax4.spines.values():
         spine.set_visible(True)
         spine.set_linewidth(2)
         spine.set_edgecolor('black')
-    # Add caption
     plt.text(0.5, -0.1, '(d)', transform=ax4.transAxes, fontsize=12, ha='center')
     
     plt.tight_layout()
-    # Adjust the layout to make room for captions
     plt.subplots_adjust(hspace=0.3)
     
     # Save the plot
@@ -363,8 +325,6 @@ def run_flame():
     plt.close()
 
 def run_spiral():
-    """Run DensityPeaksClustering, Spectral Clustering and K-means on the Spiral dataset."""
-    # Create results directory
     results_dir = "../results/experiment2"
     os.makedirs(results_dir, exist_ok=True)
     
@@ -383,11 +343,10 @@ def run_spiral():
         'blue': '#4077BC'
     }
     
-    # Define color mappings for each algorithm to ensure consistency
-    original_colors = ['blue', 'green', 'red']  # Original labels are 1-indexed
-    dpc_colors = ['red', 'green', 'blue']  # DPC labels
-    spectral_colors = ['red', 'green', 'blue']  # Spectral labels
-    kmeans_colors = ['red', 'green', 'blue']  # K-means labels
+    original_colors = ['blue', 'green', 'red']
+    dpc_colors = ['red', 'green', 'blue']
+    spectral_colors = ['red', 'green', 'blue']
+    kmeans_colors = ['red', 'green', 'blue']
     
     # Apply DensityPeaksClustering
     dpc = DensityPeaksClustering(n_clusters=3, percent=3.0, density_estimator='gaussian')
@@ -438,77 +397,69 @@ def run_spiral():
     
     # Create DataFrame and save to CSV
     metrics_df = pd.DataFrame(metrics)
-    metrics_df = metrics_df.round(4)  # Round to 4 decimal places
+    metrics_df = metrics_df.round(4)
     metrics_df.to_csv(f"{results_dir}/Spiral_metrics.csv", index=False)
     print(f"\nClustering metrics for Spiral dataset:")
     print(metrics_df.to_string(index=False))
     
     # Plot results
     fig = plt.figure(figsize=(12, 10))
-    plt.subplots_adjust(bottom=0.1)  # Add more space at the bottom for captions
+    plt.subplots_adjust(bottom=0.1)
     
     # Original labels
     ax1 = plt.subplot(2, 2, 1)
     for i, label in enumerate(np.unique(true_labels)):
         mask = true_labels == label
-        color_name = original_colors[i]  # Use consistent color mapping
+        color_name = original_colors[i]
         plt.scatter(X[mask, 0], X[mask, 1], c=color_hex[color_name], s=30, alpha=0.8)
     plt.title("Original Labels")
     plt.axis('off')
-    # Add border
     for spine in ax1.spines.values():
         spine.set_visible(True)
         spine.set_linewidth(2)
         spine.set_edgecolor('black')
-    # Add caption
     plt.text(0.5, -0.1, '(a)', transform=ax1.transAxes, fontsize=12, ha='center')
     
     # DPC labels
     ax2 = plt.subplot(2, 2, 2)
     for i, label in enumerate(np.unique(predicted_labels_dpc)):
         mask = predicted_labels_dpc == label
-        color_name = dpc_colors[i]  # Use consistent color mapping
+        color_name = dpc_colors[i]
         plt.scatter(X[mask, 0], X[mask, 1], c=color_hex[color_name], s=30, alpha=0.8)
     plt.title("DensityPeaksClustering Prediction")
     plt.axis('off')
-    # Add border
     for spine in ax2.spines.values():
         spine.set_visible(True)
         spine.set_linewidth(2)
         spine.set_edgecolor('black')
-    # Add caption
     plt.text(0.5, -0.1, '(b)', transform=ax2.transAxes, fontsize=12, ha='center')
     
     # Spectral Clustering labels
     ax3 = plt.subplot(2, 2, 3)
     for i, label in enumerate(np.unique(predicted_labels_spectral)):
         mask = predicted_labels_spectral == label
-        color_name = spectral_colors[i]  # Use consistent color mapping
+        color_name = spectral_colors[i]
         plt.scatter(X[mask, 0], X[mask, 1], c=color_hex[color_name], s=30, alpha=0.8)
     plt.title("Spectral Clustering Prediction")
     plt.axis('off')
-    # Add border
     for spine in ax3.spines.values():
         spine.set_visible(True)
         spine.set_linewidth(2)
         spine.set_edgecolor('black')
-    # Add caption
     plt.text(0.5, -0.1, '(c)', transform=ax3.transAxes, fontsize=12, ha='center')
     
     # K-means labels
     ax4 = plt.subplot(2, 2, 4)
     for i, label in enumerate(np.unique(predicted_labels_kmeans)):
         mask = predicted_labels_kmeans == label
-        color_name = kmeans_colors[i]  # Use consistent color mapping
+        color_name = kmeans_colors[i]
         plt.scatter(X[mask, 0], X[mask, 1], c=color_hex[color_name], s=30, alpha=0.8)
     plt.title("K-means Clustering")
     plt.axis('off')
-    # Add border
     for spine in ax4.spines.values():
         spine.set_visible(True)
         spine.set_linewidth(2)
         spine.set_edgecolor('black')
-    # Add caption
     plt.text(0.5, -0.1, '(d)', transform=ax4.transAxes, fontsize=12, ha='center')
     
     plt.tight_layout()
@@ -520,25 +471,6 @@ def run_spiral():
     plt.close()
 
 def get_cluster_color_mapping(predicted_labels, true_labels, canonical_color_names, color_hex):
-    """
-    Determines the color for each predicted cluster based on the most frequent true label within it.
-
-    Parameters:
-    -----------
-    predicted_labels : array-like
-        Labels predicted by the clustering algorithm.
-    true_labels : array-like
-        Ground truth labels.
-    canonical_color_names : list
-        List of color names used for the original labels.
-    color_hex : dict
-        Dictionary mapping color names to hex values.
-
-    Returns:
-    --------
-    dict
-        A dictionary mapping each unique predicted label to its assigned hex color.
-    """
     color_map = {}
     unique_predicted = np.unique(predicted_labels)
     unique_true = np.unique(true_labels)
@@ -553,7 +485,7 @@ def get_cluster_color_mapping(predicted_labels, true_labels, canonical_color_nam
         most_frequent_true_label = mode(true_labels[mask], keepdims=True)[0][0]
         
         # Get the canonical color name for that true label
-        color_name = true_label_to_color_name.get(most_frequent_true_label, 'black') # Default to black if not found
+        color_name = true_label_to_color_name.get(most_frequent_true_label, 'black')
         
         # Map the predicted label to the hex color
         color_map[pred_label] = color_hex[color_name]
@@ -561,8 +493,6 @@ def get_cluster_color_mapping(predicted_labels, true_labels, canonical_color_nam
     return color_map
 
 def run_s3():
-    """Run DensityPeaksClustering, DPCV, and K-means on the S3 dataset."""
-    # Create results directory
     results_dir = "../results/experiment2"
     os.makedirs(results_dir, exist_ok=True)
     
@@ -597,12 +527,10 @@ def run_s3():
         'cyan': '#00A0B0'
     }
     
-    # Define canonical color ordering - used for original labels and mapping predictions
     canonical_color_names = ['black', 'darkblue', 'green', 'brown', 'blue', 
                              'orange', 'darkestblue', 'pink', 'turquoise', 'cyan', 
                              'red', 'lightbrown', 'darkgreen', 'purple', 'yellow']
     
-    original_colors = canonical_color_names # Use canonical order for original labels
     dpcv_colors = ['black', 'darkblue', 'green', 'brown', 'blue', 
                              'orange', 'darkestblue', 'pink', 'turquoise', 'cyan', 
                              'red', 'lightbrown', 'darkgreen', 'purple', 'yellow']
@@ -616,12 +544,10 @@ def run_s3():
     predicted_labels_dpcv = dpcv.fit_predict(X)
 
     # Apply K-means
-    kmeans = KMeans(n_clusters=n_clusters_s3, random_state=42, n_init=10) # Added n_init explicitly
+    kmeans = KMeans(n_clusters=n_clusters_s3, random_state=42, n_init=10)
     predicted_labels_kmeans = kmeans.fit_predict(X)
 
-    # Get color mappings based on matching with true labels (for DPC and K-means)
     dpc_color_map = get_cluster_color_mapping(predicted_labels_dpc, true_labels, canonical_color_names, color_hex)
-    # dpcv_color_map = get_cluster_color_mapping(predicted_labels_dpcv, true_labels, canonical_color_names, color_hex) # Removed for DPCV
     kmeans_color_map = get_cluster_color_mapping(predicted_labels_kmeans, true_labels, canonical_color_names, color_hex)
 
     # Compute clustering metrics for S3 dataset
@@ -651,14 +577,11 @@ def run_s3():
     
     # Create DataFrame and save to CSV
     s3_metrics_df = pd.DataFrame(s3_metrics)
-    s3_metrics_df = s3_metrics_df.round(4) # Round to 4 decimal places
+    s3_metrics_df = s3_metrics_df.round(4)
     s3_metrics_df.to_csv(f"{results_dir}/S3_metrics.csv", index=False)
     print(f"\nClustering metrics for S3 dataset:")
     print(s3_metrics_df.to_string(index=False))
     
-    # Plot decision graph for DensityPeaksClustering
-    # We still need colors for the centers in the decision graph.
-    # Let's map the center indices back to predicted labels, then use the dpc_color_map.
     center_labels_dpc = predicted_labels_dpc[dpc.centers_]
     dpc_decision_graph_hex_colors = [dpc_color_map[label] for label in center_labels_dpc]
     
@@ -666,17 +589,16 @@ def run_s3():
         dpc.rho_,
         dpc.delta_,
         dpc.centers_,
-        dpc_decision_graph_hex_colors, # Use mapped colors
+        dpc_decision_graph_hex_colors,
         os.path.join(results_dir, 'S3_decision_graph.png')
     )
     
     # Plot results
     fig = plt.figure(figsize=(12, 10))
-    plt.subplots_adjust(bottom=0.1)  # Add more space at the bottom for captions
+    plt.subplots_adjust(bottom=0.1)
     
     # Original labels
     ax1 = plt.subplot(2, 2, 1)
-    # Map unique labels to colors
     unique_labels = np.unique(true_labels)
     true_label_to_color_name = {label: canonical_color_names[i % len(canonical_color_names)] 
                                 for i, label in enumerate(unique_labels)}
@@ -686,50 +608,41 @@ def run_s3():
         plt.scatter(X[mask, 0], X[mask, 1], c=color_hex[color_name], s=15, alpha=1)
     plt.title("Original Labels")
     plt.axis('off')
-    # Add border
     for spine in ax1.spines.values():
         spine.set_visible(True)
         spine.set_linewidth(2)
         spine.set_edgecolor('black')
-    # Add caption
     plt.text(0.5, -0.1, '(a)', transform=ax1.transAxes, fontsize=12, ha='center')
     
     # DensityPeaksClustering Predicted labels
     ax2 = plt.subplot(2, 2, 2)
-    # Iterate through unique predicted labels and use the mapped color
     unique_predicted_dpc = np.unique(predicted_labels_dpc)
     for label in unique_predicted_dpc:
         mask = predicted_labels_dpc == label
-        cluster_color_hex = dpc_color_map[label] # Get color from the map
+        cluster_color_hex = dpc_color_map[label]
         plt.scatter(X[mask, 0], X[mask, 1], c=cluster_color_hex, s=15, alpha=1)
     plt.title("DensityPeaksClustering Prediction")
     plt.axis('off')
-    # Add border
     for spine in ax2.spines.values():
         spine.set_visible(True)
         spine.set_linewidth(2)
         spine.set_edgecolor('black')
-    # Add caption
     plt.text(0.5, -0.1, '(b)', transform=ax2.transAxes, fontsize=12, ha='center')
 
     # DPCV Predicted labels
     ax3 = plt.subplot(2, 2, 3)
     unique_predicted_dpcv = np.unique(predicted_labels_dpcv)
-    # Iterate using enumerate to assign colors sequentially from dpcv_colors list
     for i, label in enumerate(unique_predicted_dpcv):
         mask = predicted_labels_dpcv == label
-        # cluster_color_hex = dpcv_color_map[label] # Reverted: Get color from the map
-        color_name = dpcv_colors[i % len(dpcv_colors)] # Use sequential assignment from dpcv_colors
-        cluster_color_hex = color_hex[color_name]      # Get hex value
+        color_name = dpcv_colors[i % len(dpcv_colors)]
+        cluster_color_hex = color_hex[color_name]
         plt.scatter(X[mask, 0], X[mask, 1], c=cluster_color_hex, s=15, alpha=1)
     plt.title("DPCV Prediction")
     plt.axis('off')
-    # Add border
     for spine in ax3.spines.values():
         spine.set_visible(True)
         spine.set_linewidth(2)
         spine.set_edgecolor('black')
-    # Add caption
     plt.text(0.5, -0.1, '(c)', transform=ax3.transAxes, fontsize=12, ha='center')
 
     # K-means Predicted labels
@@ -741,14 +654,11 @@ def run_s3():
         plt.scatter(X[mask, 0], X[mask, 1], c=cluster_color_hex, s=15, alpha=1)
     plt.title("K-means Prediction")
     plt.axis('off')
-    # Add border
     for spine in ax4.spines.values():
         spine.set_visible(True)
         spine.set_linewidth(2)
         spine.set_edgecolor('black')
-    # Add caption
     plt.text(0.5, -0.1, '(d)', transform=ax4.transAxes, fontsize=12, ha='center')
-    
     plt.tight_layout()
     plt.subplots_adjust(hspace=0.3)
     
@@ -758,14 +668,13 @@ def run_s3():
     plt.close()
 
 def run_experiment():
-    """Main function to run all experiment test cases."""
     results_dir = "../results/experiment2"
     os.makedirs(results_dir, exist_ok=True)
     
-    #run_aggregation()
+    run_aggregation()
     run_s3()
-    #run_flame()
-    #run_spiral()
+    run_flame()
+    run_spiral()
     
 if __name__ == "__main__":
     run_experiment()
